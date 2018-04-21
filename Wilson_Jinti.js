@@ -21,8 +21,6 @@ let formData = new FormData()
 formData.append('account', USERNAME)
 formData.append('password', PASSWORD)
 formData.append('btnLogin', '登录')
-formData.append('ReURL', 'http%3a%2f%2fwww.jinti.net%2flife%2fuser_manage.asp')
-formData.append('action', 'login')
 
 const options = {
     method: "POST",
@@ -93,15 +91,73 @@ runScript = () => {
     setTimeout(runScript, TWO_DAYS_IN_MILLI)
 }
 
+loadPreLoginData = () => {
+    //This is a login GET request, no need to pass any data, we just want the HTML
+    return fetch(LOGIN_URL)
+    .then((res)=>res.text())
+    .then((html)=>{
+        //We're looking for jinti specific data to be sent on the Login POST request
+        var values = getFormHiddenValues(html)
+        console.log(values)
+        if (values == null || values.length == 0) {
+            return null
+        } else {
+            for (const obj of values) {
+                console.log(obj)
+                formData.append(obj.key, obj.value)
+            }
+        }
+    })
+}
+
+getFormHiddenValues = (html) => {
+    let findForm = html.split('<form')
+    // if (findForm < 0) {
+    //     console.log("No form tag was found.")
+    //     return null
+    // }
+    // index of the end of the <form> tag (Opening tag only)
+    let formIndexBeginning = html.indexOf(findForm[1].split('\n')[0]) + findForm[1].indexOf('>') + 1
+    let formIndexEnd = html.indexOf(findForm[1].split('</form>')[1]) - '</form>'.length
+    let formHtml = html.substring(formIndexBeginning, formIndexEnd)
+    let values = getHiddenValues(formHtml)
+    return values
+}
+
+getHiddenValues = (html) => {
+    var indices = [];
+    var lines = html.split('\n')
+    var values = [];
+    for(var i=0; i<lines.length;i++) {
+        if (lines[i].includes('type="hidden"')){
+            let line = lines[i]
+            let key = line.split('name="')[1].split('"')[0]
+            let value = line.split('value')[1]
+            if (value.includes('"')) value = value.split('"')[1].split('"')[0]
+            else value = ""
+            values.push({key, value})
+            indices.push(i);
+        }
+    }
+    return values
+}
+
+
+
 jinti = () => {
-    fetch(LOGIN_URL, options).then(requestResult => {
-        // for(let o of requestResult.headers) {
-        //     console.log(o, o.value)
-        // }
-        // console.log(requestResult.headers)
-        appendCookies(requestResult.headers.get("Set-Cookie"))
-        return requestResult.text()
-    }).then(textResponse => {
+    loadPreLoginData()
+    .then(() => {
+        console.log(options)
+        return fetch(LOGIN_URL, options).then(requestResult => {
+            // for(let o of requestResult.headers) {
+            //     console.log(o, o.value)
+            // }
+            // console.log(requestResult.headers)
+            appendCookies(requestResult.headers.get("Set-Cookie"))
+            return requestResult.text()
+        })    
+    })
+    .then(textResponse => {
         if (textResponse.includes("wilsonstorage06")) {
             console.log("Login successfully")
             let newOptions = {
