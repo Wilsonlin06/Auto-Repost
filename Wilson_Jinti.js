@@ -17,10 +17,12 @@ const PASSWORD = "Love9420116@"
 const LOGIN_URL = 'https://passport.jinti.net/login.aspx?reurl=http%3a%2f%2fwww.jinti.net%2flife%2fuser_manage.asp'
 
 let formData = new FormData()
+
 formData.append('account', USERNAME)
 formData.append('password', PASSWORD)
-formData.append('submit', '登录')
-formData.append('redirect', '')
+formData.append('btnLogin', '登录')
+formData.append('ReURL', 'http%3a%2f%2fwww.jinti.net%2flife%2fuser_manage.asp')
+formData.append('action', 'login')
 
 const options = {
     method: "POST",
